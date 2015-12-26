@@ -55,8 +55,13 @@ The following CellObject represents a Registry value from a SOFTWARE hive file:
     </byte_runs>
   </cellobject>
 ```
+
+## Compiling Intructions
+
+This software is authored using Microsoft Visual Studio 2015. The Visual Studio Studio Solution file (CellXML-Registry.sln) is located in the root directory of the project. 
   
 ## CellXML-Registry Acknowledgements
 
 Eric Zimmerman: Author of the Registry parser project (https://github.com/EricZimmerman/Registry)
+
 Alex Nelson: Author of the RegXML project (http://www.ssrc.ucsc.edu/person/ajnelson.html)
