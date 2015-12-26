@@ -156,6 +156,7 @@ namespace CellXMLRegistry
                     continue;
                 }
 
+                Console.WriteLine("Processing '{0}'...", testFile);
                 logger.Info("Processing '{0}'", testFile);
 
                 var sw = new Stopwatch();

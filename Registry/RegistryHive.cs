@@ -601,7 +601,7 @@ namespace Registry
             var KeyCountDeleted = 0;
             var ValueCountDeleted = 0;
 
-            Console.WriteLine(">>> Starting XML generation...");
+            Console.WriteLine("  > Starting XML generation...");
 
             var header = new StringBuilder();
             using (var sw = new StreamWriter(outfile, false))

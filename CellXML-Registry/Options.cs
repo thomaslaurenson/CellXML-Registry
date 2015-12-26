@@ -8,11 +8,11 @@ internal class Options
     public string HiveName { get; set; }
 
     [Option('d', "directory", Required = false,
-        HelpText = "Name of directory to lok for registry hives to process")]
+        HelpText = "Name of directory of Registry hives to process")]
     public string DirectoryName { get; set; }
 
     [Option('v', DefaultValue = 0, Required = false,
-        HelpText = "Verbosity level. 0 = Info, 1 = Debug, 2 = Trace")]
+        HelpText = "Log file verbosity level. 0 = Info, 1 = Debug, 2 = Trace")]
     public int VerboseLevel { get; set; }
 
     public string GetUsage() 
@@ -29,13 +29,14 @@ internal class Options
         usage.AppendLine("                                  thomaslaurenson.com\n");
 
         usage.AppendLine("  >>> Overview:");
-        usage.AppendLine("    CellXML-Registry is a simple command line tool to parse an offline Windows");
-        usage.AppendLine("    Registry hive file (e.g. SOFTWARE) and export metadata to represent the");
-        usage.AppendLine("    contents. RegXML syntax is used to represent all Registry entries.\n");
+        usage.AppendLine("    CellXML-Registry.exe is a portable Windows tool that parses an offline");
+        usage.AppendLine("    Windows Registry hive file and converts it to the RegXML format.");
+        usage.AppendLine("    CellXML-Registry leverages the Registry parser project by Eric");
+        usage.AppendLine("    Zimmerman to aid in parsing the Registry structure.");
         usage.AppendLine("  >>> Usage Examples:");
         usage.AppendLine("    CellXML-Registry-1.0.0.exe -f NTUSER.DAT");
         usage.AppendLine("    CellXML-Registry-1.0.0.exe -v 2 -f SOFTWARE");
-        usage.AppendLine("    CellXML-Registry-1.0.0.exe -d C:\\Test-Hives\\n");
+        usage.AppendLine("    CellXML-Registry-1.0.0.exe -d C:\\Test-Hives\\");
         usage.AppendLine("  >>> Acknowledgements:");
         usage.AppendLine("    Eric Zimmerman Registry project (https://github.com/EricZimmerman/Registry)");
         usage.AppendLine("    Alex Nelson RegXML project (http://www.ssrc.ucsc.edu/person/ajnelson.html)");
