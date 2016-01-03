@@ -176,7 +176,8 @@ namespace CellXMLRegistry
                     sw.Start();
 
                     // This is where Registry hive file processing is done
-                    registryHive.RecoverDeleted = true;
+                    registryHive.RecoverDeleted = result.Value.RecoverDeleted;
+                    logger.Info("Recover boolean: '{0}'", registryHive.RecoverDeleted);
                     registryHive.FlushRecordListsAfterParse = false;
                     registryHive.ParseHive();
                     logger.Info("Finished processing '{0}'", testFile);
@@ -224,11 +225,14 @@ namespace CellXMLRegistry
                         sb.AppendLine(
                             $"There are {referencedList.Count():N0} list records marked as being referenced ({referencedList.Count() / (double)registryHive.ListRecords.Count:P})");
 
-                        sb.AppendLine();
-                        sb.AppendLine("Free record info");
-                        sb.AppendLine(
-                            $"{freeCells.Count():N0} free Cell records (nk: {nkFree:N0}, vk: {vkFree:N0}, sk: {skFree:N0}, lk: {lkFree:N0})");
-                        sb.AppendLine($"{freeLists.Count():N0} free List records");
+                        if (result.Value.RecoverDeleted)
+                        {
+                            sb.AppendLine();
+                            sb.AppendLine("Free record info");
+                            sb.AppendLine(
+                                $"{freeCells.Count():N0} free Cell records (nk: {nkFree:N0}, vk: {vkFree:N0}, sk: {skFree:N0}, lk: {lkFree:N0})");
+                            sb.AppendLine($"{freeLists.Count():N0} free List records");
+                        }
 
                         sb.AppendLine();
                         sb.AppendLine(
@@ -245,7 +249,9 @@ namespace CellXMLRegistry
 
                     logger.Info(sb.ToString());
 
-                    var deletedOnly = false;
+                    //var deletedOnly = false;
+                    var deletedOnly = result.Value.RecoverDeleted;
+
                     var baseDir = Path.GetDirectoryName(testFile);
                     var baseFname = Path.GetFileName(testFile);
                     var myName = string.Empty;

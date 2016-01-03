@@ -11,6 +11,10 @@ internal class Options
         HelpText = "Name of directory of Registry hives to process")]
     public string DirectoryName { get; set; }
 
+    [Option('r', DefaultValue = false, Required = false,
+    HelpText = "Recover and process deleted Registry keys/values")]
+    public bool RecoverDeleted { get; set; }
+
     [Option('v', DefaultValue = 0, Required = false,
         HelpText = "Log file verbosity level. 0 = Info, 1 = Debug, 2 = Trace")]
     public int VerboseLevel { get; set; }
@@ -35,8 +39,10 @@ internal class Options
         usage.AppendLine("    Zimmerman to aid in parsing the Registry structure.");
         usage.AppendLine("  >>> Usage Examples:");
         usage.AppendLine("    CellXML-Registry-1.0.0.exe -f NTUSER.DAT");
+        usage.AppendLine("    CellXML-Registry-1.0.0.exe -r -f NTUSER.DAT");
         usage.AppendLine("    CellXML-Registry-1.0.0.exe -v 2 -f SOFTWARE");
         usage.AppendLine("    CellXML-Registry-1.0.0.exe -d C:\\Test-Hives\\");
+        usage.AppendLine("    CellXML-Registry-1.0.0.exe -r -d C:\\Test-Hives\\");
         usage.AppendLine("  >>> Acknowledgements:");
         usage.AppendLine("    Eric Zimmerman Registry project (https://github.com/EricZimmerman/Registry)");
         usage.AppendLine("    Alex Nelson RegXML project (http://www.ssrc.ucsc.edu/person/ajnelson.html)");
