@@ -69,6 +69,9 @@ namespace CellXMLRegistry
         /// <param name="args"></param>
 		private static void Main(string[] args)
         {
+            // Start timing program main execution time
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             //string testFile; //OLD SINGLE MODE
             var testFiles = new List<string>();
 
@@ -156,7 +159,7 @@ namespace CellXMLRegistry
                     continue;
                 }
 
-                Console.WriteLine("Processing '{0}'...", testFile);
+                Console.WriteLine(">>> Processing: '{0}'", testFile);
                 logger.Info("Processing '{0}'", testFile);
 
                 var sw = new Stopwatch();
@@ -181,6 +184,7 @@ namespace CellXMLRegistry
                     registryHive.FlushRecordListsAfterParse = false;
                     registryHive.ParseHive();
                     logger.Info("Finished processing '{0}'", testFile);
+                    Console.WriteLine("  > Finished processing...");
 
                     sw.Stop();
 
@@ -249,8 +253,8 @@ namespace CellXMLRegistry
 
                     logger.Info(sb.ToString());
 
-                    //var deletedOnly = false;
-                    var deletedOnly = result.Value.RecoverDeleted;
+                    var deletedOnly = false;
+                    //var deletedOnly = result.Value.RecoverDeleted;
 
                     var baseDir = Path.GetDirectoryName(testFile);
                     var baseFname = Path.GetFileName(testFile);
@@ -269,7 +273,11 @@ namespace CellXMLRegistry
                     Console.WriteLine("There was an error: {0}", ex.Message);
                 }
 
-                logger.Info("Processing took {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
+                System.Threading.Thread.Sleep(500);
+                stopwatch.Stop();
+                logger.Info(">>> Main time: {0:N4} seconds\r\n", stopwatch.Elapsed.Seconds);
+                logger.Info(">>> Processing time: {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
+                Console.WriteLine("  > Program main time took {0:N4} seconds\r\n", stopwatch.Elapsed.Seconds);
             }
         }
 	}

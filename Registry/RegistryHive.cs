@@ -679,15 +679,19 @@ namespace Registry
                             ValueCountDeleted += 1;
                             var val = keyValuePair.Value as VKCellRecord;
 
+                            // Attempt to parse value data:
+                            // This has caused problems, if it cannot be converted, it crashes the try loop
+                            // and does not finish populating a CellObject
+                            // This will then crash any XML parser!
+                            // Solution: Try convert data to string before populating CellObject
+                            //           Then if it crashes, we dont have a half populated CellObject
+                            string data = BitConverter.ToString(val.ValueDataRaw).Replace("-", " ");
+
                             sw.WriteLine("<cellobject>");
                             sw.WriteLine("<cellpath></cellpath>"); // Not cell path is known here
-                            //_logger.Info("OLD: {0}", val.ValueName);
                             string KeyCellpath = SpecialXMLCharacterCheck(val.ValueName);
                             string KeyCellpath2 = ControlXMLCharacterCheck(KeyCellpath);
                             sw.WriteLine("<basename>{0}</basename>", KeyCellpath2);
-                            //_logger.Info("NEW: {0}", KeyCellpath2);
-
-                            //sw.WriteLine("<basename>{0}</basename>", val.ValueName);
                             sw.WriteLine("<name_type>v</name_type>");
                             if (val.IsFree)
                             {
@@ -698,7 +702,7 @@ namespace Registry
                                 sw.WriteLine("<alloc>1</alloc>");
                             }
                             sw.WriteLine("<data_type>{0}</data_type>", val.DataType);
-                            sw.WriteLine("<data>{0}</data>", BitConverter.ToString(val.ValueDataRaw).Replace("-", " "));
+                            sw.WriteLine("<data></data>", data);
                             sw.WriteLine("<byte_runs>");
                             sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.AbsoluteOffset, ((val.Size) * (-1) - val.Padding.Length));
                             sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.OffsetToData + 4096), val.DataLength);
@@ -715,7 +719,9 @@ namespace Registry
                             var key = new RegistryKey(nk, null);
 
                             sw.WriteLine("<cellobject>");
-                            sw.WriteLine("<cellpath>{0}</cellpath>", key.KeyPath);
+                            string KeyCellpath = SpecialXMLCharacterCheck(key.KeyPath);
+                            string KeyCellpath2 = ControlXMLCharacterCheck(KeyCellpath);
+                            sw.WriteLine("<cellpath>{0}</cellpath>", KeyCellpath2);
                             sw.WriteLine("<name_type>k</name_type>");
                             sw.WriteLine("<mtime>{0}</mtime>", key.LastWriteTime.Value.UtcDateTime.ToString("o"));
                             sw.WriteLine("<alloc>0</alloc>");
@@ -734,10 +740,10 @@ namespace Registry
                     }
                 }
                 sw.WriteLine("</hive>");
-                _logger.Info("total_keys|{0}", KeyCount);
-                _logger.Info("total_values|{0}", ValueCount);
-                _logger.Info("total_deleted_keys|{0}", KeyCountDeleted);
-                _logger.Info("total_deleted_values|{0}", ValueCountDeleted);
+                _logger.Info(">>> total_keys: {0}", KeyCount);
+                _logger.Info(">>> total_values: {0}", ValueCount);
+                _logger.Info(">>> total_deleted_keys: {0}", KeyCountDeleted);
+                _logger.Info(">>> total_deleted_values: {0}", ValueCountDeleted);
             }
         }
 
