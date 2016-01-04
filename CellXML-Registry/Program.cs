@@ -69,9 +69,6 @@ namespace CellXMLRegistry
         /// <param name="args"></param>
 		private static void Main(string[] args)
         {
-            // Start timing program main execution time
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             //string testFile; //OLD SINGLE MODE
             var testFiles = new List<string>();
 
@@ -186,8 +183,6 @@ namespace CellXMLRegistry
                     logger.Info("Finished processing '{0}'", testFile);
                     Console.WriteLine("  > Finished processing...");
 
-                    sw.Stop();
-
                     var freeCells = registryHive.CellRecords.Where(t => t.Value.IsFree);
                     var referencedCells = registryHive.CellRecords.Where(t => t.Value.IsReferenced);
 
@@ -272,12 +267,9 @@ namespace CellXMLRegistry
                 {
                     Console.WriteLine("There was an error: {0}", ex.Message);
                 }
-
-                System.Threading.Thread.Sleep(500);
-                stopwatch.Stop();
-                logger.Info(">>> Main time: {0:N4} seconds\r\n", stopwatch.Elapsed.Seconds);
+                sw.Stop();
                 logger.Info(">>> Processing time: {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
-                Console.WriteLine("  > Program main time took {0:N4} seconds\r\n", stopwatch.Elapsed.Seconds);
+                Console.WriteLine(">>> Processing time: {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
             }
         }
 	}
