@@ -512,15 +512,15 @@ namespace Registry
 
                 // Perform a special character check
                 string KeyCellpath = SpecialXMLCharacterCheck(subkey.KeyPath);
-                string KeyCellpath2 = ControlXMLCharacterCheck(KeyCellpath);
-                sw.WriteLine("<cellpath>{0}</cellpath>", KeyCellpath2);
+                KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
+                sw.WriteLine("  <cellpath>{0}</cellpath>", KeyCellpath);
                 //sw.WriteLine("<cellpath>{0}</cellpath>", subkey.KeyPath);
 
-                sw.WriteLine("<name_type>k</name_type>");
-                sw.WriteLine("<mtime>{0}</mtime>", subkey.LastWriteTime.Value.UtcDateTime.ToString("o"));
+                sw.WriteLine("  <name_type>k</name_type>");
+                sw.WriteLine("  <mtime>{0}</mtime>", subkey.LastWriteTime.Value.UtcDateTime.ToString("o"));
                 if (subkey.NKRecord.IsDeleted)
                 {
-                    sw.WriteLine("<alloc>0</alloc>");
+                    sw.WriteLine("  <alloc>0</alloc>");
                     keyCountDeleted += 1;
                 }
                 else
@@ -528,9 +528,9 @@ namespace Registry
                     sw.WriteLine("<alloc>1</alloc>");
                     keyCount += 1;
                 }
-                sw.WriteLine("<byte_runs>");
-                sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", subkey.NKRecord.AbsoluteOffset, (subkey.NKRecord.Size - subkey.NKRecord.Padding.Length));
-                sw.WriteLine("</byte_runs>");
+                sw.WriteLine("  <byte_runs>");
+                sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", subkey.NKRecord.AbsoluteOffset, (subkey.NKRecord.Size - subkey.NKRecord.Padding.Length));
+                sw.WriteLine("  </byte_runs>");
                 sw.WriteLine("</cellobject>");
 
                 // Iterate through each value
@@ -543,34 +543,34 @@ namespace Registry
                     string ValueKeypath = SpecialXMLCharacterCheck(subkey.KeyPath);
                     string ValueBasename = SpecialXMLCharacterCheck(val.ValueName);
                     string ValueCellpath = String.Join("\\", new String[] { ValueKeypath, ValueBasename });
-                    sw.WriteLine("<cellpath>{0}</cellpath>", ValueCellpath);
-                    sw.WriteLine("<basename>{0}</basename>", ValueBasename);
+                    sw.WriteLine("  <cellpath>{0}</cellpath>", ValueCellpath);
+                    sw.WriteLine("  <basename>{0}</basename>", ValueBasename);
                     //sw.WriteLine("<cellpath>{0}\\{1}</cellpath>", subkey.KeyPath, val.ValueName);
                     //sw.WriteLine("<basename>{0}</basename>", val.ValueName);
-                    sw.WriteLine("<name_type>v</name_type>");
+                    sw.WriteLine("  <name_type>v</name_type>");
                     if (val.VKRecord.IsFree)
                     {
-                        sw.WriteLine("<alloc>0</alloc>");
+                        sw.WriteLine("  <alloc>0</alloc>");
                         valueCountDeleted += 1;
                     }
                     else
                     {
-                        sw.WriteLine("<alloc>1</alloc>");
+                        sw.WriteLine("  <alloc>1</alloc>");
                         valueCount += 1;
                     }
-                    sw.WriteLine("<data_type>{0}</data_type>", val.VKRecord.DataType);
-                    sw.WriteLine("<data>{0}</data>", BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
-                    sw.WriteLine("<byte_runs>");
+                    sw.WriteLine("  <data_type>{0}</data_type>", val.VKRecord.DataType);
+                    sw.WriteLine("  <data>{0}</data>", BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
+                    sw.WriteLine("  <byte_runs>");
 
                     if (val.VKRecord.DataType != VKCellRecord.DataTypeEnum.RegNone)
                     {
                         // Two byte_run elements are written because:
                         // 1st: Points to the absolute offset of the VK record
                         // 2nd: Points to the actual offset where the data is
-                        sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.VKRecord.AbsoluteOffset, ((val.VKRecord.Size) * (-1) - val.VKRecord.Padding.Length));
-                        sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.VKRecord.OffsetToData + 4096), val.VKRecord.ValueDataRaw.Length);
+                        sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.VKRecord.AbsoluteOffset, ((val.VKRecord.Size) * (-1) - val.VKRecord.Padding.Length));
+                        sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.VKRecord.OffsetToData + 4096), val.VKRecord.ValueDataRaw.Length);
                     }
-                    sw.WriteLine("</byte_runs>");
+                    sw.WriteLine("  </byte_runs>");
                     sw.WriteLine("</cellobject>");
 
                     // TESTING CODE>
@@ -619,13 +619,13 @@ namespace Registry
                     {
                         KeyCount = 1;
                         sw.WriteLine("<cellobject root='1'>");
-                        sw.WriteLine("<cellpath>{0}</cellpath>", Root.KeyPath);
-                        sw.WriteLine("<name_type>k</name_type>");
-                        sw.WriteLine("<mtime>{0}</mtime>", Root.LastWriteTime.Value.UtcDateTime.ToString("o"));
-                        sw.WriteLine("<alloc>1</alloc>");
-                        sw.WriteLine("<byte_runs>");
-                        sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", Root.NKRecord.AbsoluteOffset, (Root.NKRecord.Size - Root.NKRecord.Padding.Length));
-                        sw.WriteLine("</byte_runs>");
+                        sw.WriteLine("  <cellpath>{0}</cellpath>", Root.KeyPath);
+                        sw.WriteLine("  <name_type>k</name_type>");
+                        sw.WriteLine("  <mtime>{0}</mtime>", Root.LastWriteTime.Value.UtcDateTime.ToString("o"));
+                        sw.WriteLine("  <alloc>1</alloc>");
+                        sw.WriteLine("  <byte_runs>");
+                        sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", Root.NKRecord.AbsoluteOffset, (Root.NKRecord.Size - Root.NKRecord.Padding.Length));
+                        sw.WriteLine("  </byte_runs>");
                         sw.WriteLine("</cellobject>");
                     }
 
@@ -634,32 +634,32 @@ namespace Registry
                     {
                         ValueCount += 1;
                         sw.WriteLine("<cellobject>");
-                        sw.WriteLine("<cellpath>{0}\\{1}</cellpath>", Root.KeyPath, val.ValueName);
-                        sw.WriteLine("<basename>{0}</basename>", val.ValueName);
-                        sw.WriteLine("<name_type>v</name_type>");
+                        sw.WriteLine("  <cellpath>{0}\\{1}</cellpath>", Root.KeyPath, val.ValueName);
+                        sw.WriteLine("  <basename>{0}</basename>", val.ValueName);
+                        sw.WriteLine("  <name_type>v</name_type>");
                         if (val.VKRecord.IsFree)
                         {
-                            sw.WriteLine("<alloc>0</alloc>");
+                            sw.WriteLine("  <alloc>0</alloc>");
                             ValueCountDeleted += 1;
                         }
                         else
                         {
-                            sw.WriteLine("<alloc>1</alloc>");
+                            sw.WriteLine("  <alloc>1</alloc>");
                             ValueCount += 1;
                         }
-                        sw.WriteLine("<data_type>{0}</data_type>", val.VKRecord.DataType);
-                        sw.WriteLine("<data>{0}</data>", BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
-                        sw.WriteLine("<byte_runs>");
+                        sw.WriteLine("  <data_type>{0}</data_type>", val.VKRecord.DataType);
+                        sw.WriteLine("  <data>{0}</data>", BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
+                        sw.WriteLine("  <byte_runs>");
 
                         if (val.VKRecord.DataType != VKCellRecord.DataTypeEnum.RegNone)
                         {
                             // Two byte_run elements are written because:
                             // 1st: Points to the absolute offset of the VK record
                             // 2nd: Points to the actual offset where the data is
-                            sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.VKRecord.AbsoluteOffset, ((val.VKRecord.Size) * (-1) - val.VKRecord.Padding.Length));
-                            sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.VKRecord.OffsetToData + 4096), val.VKRecord.ValueDataRaw.Length);
+                            sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.VKRecord.AbsoluteOffset, ((val.VKRecord.Size) * (-1) - val.VKRecord.Padding.Length));
+                            sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.VKRecord.OffsetToData + 4096), val.VKRecord.ValueDataRaw.Length);
                         }
-                        sw.WriteLine("</byte_runs>");
+                        sw.WriteLine("  </byte_runs>");
                         sw.WriteLine("</cellobject>");
                     }
                     // Now start recursively dumping subkeys from the ROOT key
@@ -679,35 +679,35 @@ namespace Registry
                             ValueCountDeleted += 1;
                             var val = keyValuePair.Value as VKCellRecord;
 
-                            // Attempt to parse value data:
-                            // This has caused problems, if it cannot be converted, it crashes the try loop
-                            // and does not finish populating a CellObject
-                            // This will then crash any XML parser!
-                            // Solution: Try convert data to string before populating CellObject
-                            //           Then if it crashes, we dont have a half populated CellObject
                             string data = BitConverter.ToString(val.ValueDataRaw).Replace("-", " ");
 
-                            sw.WriteLine("<cellobject>");
-                            sw.WriteLine("<cellpath></cellpath>"); // Not cell path is known here
+                            // Check the cell path (key + value name) for:
+                            // 1) Special characters
+                            // 2) Unicode control characters
                             string KeyCellpath = SpecialXMLCharacterCheck(val.ValueName);
-                            string KeyCellpath2 = ControlXMLCharacterCheck(KeyCellpath);
-                            sw.WriteLine("<basename>{0}</basename>", KeyCellpath2);
-                            sw.WriteLine("<name_type>v</name_type>");
-                            if (val.IsFree)
-                            {
-                                sw.WriteLine("<alloc>0</alloc>");
-                            }
-                            else
-                            {
-                                sw.WriteLine("<alloc>1</alloc>");
-                            }
-                            sw.WriteLine("<data_type>{0}</data_type>", val.DataType);
-                            sw.WriteLine("<data></data>", data);
-                            sw.WriteLine("<byte_runs>");
-                            sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.AbsoluteOffset, ((val.Size) * (-1) - val.Padding.Length));
-                            sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.OffsetToData + 4096), val.DataLength);
-                            sw.WriteLine("</byte_runs>");
-                            sw.WriteLine("</cellobject>");
+                            KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
+                            
+                            // Write CellObject
+                            sw.WriteLine(@"<cellobject>
+  <cellpath></cellpath>
+  <basename>{0}</basename>
+  <name_type>v</name_type>
+  <alloc>{1}</alloc>
+  <data_type>{2}</data_type>
+  <data>{3}</data>
+  <byte_runs>
+    <byte_run file_offset=""{4}"" len=""{5}""/>
+    <byte_run file_offset=""{6}"" len=""{7}""/>
+  </byte_runs>
+</cellobject>",
+                                KeyCellpath,
+                                Convert.ToInt32(val.IsFree),
+                                val.DataType,
+                                data,
+                                val.AbsoluteOffset,
+                                ((val.Size) * (-1) - val.Padding.Length),
+                                (val.OffsetToData + 4096), 
+                                val.DataLength);
                         }
 
                         if (keyValuePair.Value.Signature == "nk")
@@ -718,19 +718,23 @@ namespace Registry
                             var nk = keyValuePair.Value as NKCellRecord;
                             var key = new RegistryKey(nk, null);
 
-                            sw.WriteLine("<cellobject>");
                             string KeyCellpath = SpecialXMLCharacterCheck(key.KeyPath);
-                            string KeyCellpath2 = ControlXMLCharacterCheck(KeyCellpath);
-                            sw.WriteLine("<cellpath>{0}</cellpath>", KeyCellpath2);
-                            sw.WriteLine("<name_type>k</name_type>");
-                            sw.WriteLine("<mtime>{0}</mtime>", key.LastWriteTime.Value.UtcDateTime.ToString("o"));
-                            sw.WriteLine("<alloc>0</alloc>");
-                            sw.WriteLine("<byte_runs>");
-                            sw.WriteLine("<byte_run file_offset=\"{0}\" len=\"{1}\"/>", key.NKRecord.AbsoluteOffset, (key.NKRecord.Size - key.NKRecord.Padding.Length));
-                            sw.WriteLine("</byte_runs>");
-                            sw.WriteLine("</cellobject>");
+                            KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
+                            sw.WriteLine(@"<cellobject>
+  <cellpath>{0}</cellpath>
+  <name_type>k</name_type>
+  <mtime>{1}</mtime>
+  <alloc>0</alloc>
+  <byte_runs>
+    <byte_run file_offset=""{2}"" len=""{3}""/>
+  </byte_runs>
+</cellobject>",
+                                KeyCellpath,
+                                key.LastWriteTime.Value.UtcDateTime.ToString("o"),
+                                key.NKRecord.AbsoluteOffset,
+                                (key.NKRecord.Size - key.NKRecord.Padding.Length));
 
-                            DumpKeyXMLFormat(key, sw, ref KeyCount, ref ValueCount, ref KeyCountDeleted, ref ValueCountDeleted);
+                        DumpKeyXMLFormat(key, sw, ref KeyCount, ref ValueCount, ref KeyCountDeleted, ref ValueCountDeleted);
                         }
                     }
                     catch (Exception ex)
