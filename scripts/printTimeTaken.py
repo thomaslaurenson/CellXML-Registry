@@ -61,7 +61,7 @@ def parseLogFile(logfile):
                 time += float(l)
     f.close()
                 
-    print("%s,%d,%d,%d,%d,%d" % (logfile, keys, values, dkeys, dvalues, time))
+    print("%s,%d,%d,%d,%d,%f" % (logfile, keys, values, dkeys, dvalues, time))
     
 ################################################################################
 if __name__=="__main__":
@@ -80,7 +80,7 @@ if __name__=="__main__":
                                  "Values",
                                  "DeletedKeys",
                                  "DeletedValues",
-                                 "Time")
+                                 "Time"))
     
     if os.path.isdir(logfile):
         logs = glob.glob(logfile + "/*.log")
