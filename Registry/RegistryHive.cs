@@ -541,7 +541,9 @@ namespace Registry
 
                     // Perform a special character check
                     string ValueKeypath = SpecialXMLCharacterCheck(subkey.KeyPath);
+                    ValueKeypath = ControlXMLCharacterCheck(ValueKeypath);
                     string ValueBasename = SpecialXMLCharacterCheck(val.ValueName);
+                    ValueBasename = ControlXMLCharacterCheck(ValueBasename);
                     string ValueCellpath = String.Join("\\", new String[] { ValueKeypath, ValueBasename });
                     sw.WriteLine("  <cellpath>{0}</cellpath>", ValueCellpath);
                     sw.WriteLine("  <basename>{0}</basename>", ValueBasename);
