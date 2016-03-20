@@ -11,6 +11,7 @@ using Registry.Cells;
 using Registry.Lists;
 using Registry.Other;
 using static Registry.Other.Helpers;
+using System.Xml; // TL: Addition
 
 namespace Registry
 {
@@ -501,92 +502,109 @@ namespace Registry
             return XMLstring;
         }
 
-        private void DumpKeyXMLFormat(RegistryKey key, StreamWriter sw, ref int keyCount, ref int valueCount, ref int keyCountDeleted, ref int valueCountDeleted)
+        private void DumpKeyXMLFormat(RegistryKey key, XmlWriter xmlWriter, ref int keyCount, ref int valueCount, ref int keyCountDeleted, ref int valueCountDeleted)
         {
             
-            // Iterate through each subkey
+            // Iterate through each subkey, creating a cellobject for each entry
             foreach (var subkey in key.SubKeys)
             {
-                // Write XML for Registry subkey entry
-                sw.WriteLine("<cellobject>");
+                // Start cellobject element
+                xmlWriter.WriteStartElement("cellobject");
 
-                // Perform a special character check
-                string KeyCellpath = SpecialXMLCharacterCheck(subkey.KeyPath);
-                KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
-                sw.WriteLine("  <cellpath>{0}</cellpath>", KeyCellpath);
-                //sw.WriteLine("<cellpath>{0}</cellpath>", subkey.KeyPath);
+                // Write cellpath element
+                xmlWriter.WriteStartElement("cellpath");
+                xmlWriter.WriteString(subkey.KeyPath);
+                xmlWriter.WriteEndElement();
 
-                sw.WriteLine("  <name_type>k</name_type>");
-                sw.WriteLine("  <mtime>{0}</mtime>", subkey.LastWriteTime.Value.UtcDateTime.ToString("o"));
-                if (subkey.NKRecord.IsDeleted)
-                {
-                    sw.WriteLine("  <alloc>0</alloc>");
-                    keyCountDeleted += 1;
-                }
-                else
-                {
-                    sw.WriteLine("<alloc>1</alloc>");
-                    keyCount += 1;
-                }
-                sw.WriteLine("  <byte_runs>");
-                sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", subkey.NKRecord.AbsoluteOffset, (subkey.NKRecord.Size - subkey.NKRecord.Padding.Length));
-                sw.WriteLine("  </byte_runs>");
-                sw.WriteLine("</cellobject>");
+                // Write basename element
+                xmlWriter.WriteStartElement("basename");
+                xmlWriter.WriteString(subkey.KeyName);
+                xmlWriter.WriteEndElement();
 
-                // Iterate through each value
+                // Write name_type element
+                xmlWriter.WriteStartElement("name_type");
+                xmlWriter.WriteString("k");
+                xmlWriter.WriteEndElement();
+
+                // Write alloc element
+                xmlWriter.WriteStartElement("alloc");
+                if (subkey.NKRecord.IsDeleted) { xmlWriter.WriteString("0"); }
+                else { xmlWriter.WriteString("1"); }
+                xmlWriter.WriteEndElement();
+
+                // Write LastWriteTime (modified time) element
+                xmlWriter.WriteStartElement("mtime");
+                xmlWriter.WriteString(subkey.LastWriteTime.Value.UtcDateTime.ToString("o"));
+                xmlWriter.WriteEndElement();
+
+                // Write byte_runs (file location) element
+                xmlWriter.WriteStartElement("byte_runs");
+                xmlWriter.WriteStartElement("byte_run");
+                xmlWriter.WriteAttributeString("file_offset", subkey.NKRecord.AbsoluteOffset.ToString());
+                xmlWriter.WriteAttributeString("len", (subkey.NKRecord.Size - subkey.NKRecord.Padding.Length).ToString());
+                xmlWriter.WriteEndElement();
+                xmlWriter.WriteEndElement(); // End byte_runs element
+
+                xmlWriter.WriteEndElement(); // End cellobject element
+
+                // Iterate through each value, creating a cellobject for each entry
                 foreach (var val in subkey.Values)
                 {
-                    // Write XML for Registry value entry
-                    sw.WriteLine("<cellobject>");
+                    // Start cellobject element
+                    xmlWriter.WriteStartElement("cellobject");
 
-                    // Perform a special character check
-                    string ValueKeypath = SpecialXMLCharacterCheck(subkey.KeyPath);
-                    ValueKeypath = ControlXMLCharacterCheck(ValueKeypath);
-                    string ValueBasename = SpecialXMLCharacterCheck(val.ValueName);
-                    ValueBasename = ControlXMLCharacterCheck(ValueBasename);
-                    string ValueCellpath = String.Join("\\", new String[] { ValueKeypath, ValueBasename });
-                    sw.WriteLine("  <cellpath>{0}</cellpath>", ValueCellpath);
-                    sw.WriteLine("  <basename>{0}</basename>", ValueBasename);
-                    //sw.WriteLine("<cellpath>{0}\\{1}</cellpath>", subkey.KeyPath, val.ValueName);
-                    //sw.WriteLine("<basename>{0}</basename>", val.ValueName);
-                    sw.WriteLine("  <name_type>v</name_type>");
-                    if (val.VKRecord.IsFree)
-                    {
-                        sw.WriteLine("  <alloc>0</alloc>");
+                    // Write cellpath element
+                    xmlWriter.WriteStartElement("cellpath");
+                    xmlWriter.WriteString(string.Concat(subkey.KeyPath, "\\", val.ValueName));
+                    xmlWriter.WriteEndElement();
+
+                    // Write basename element
+                    xmlWriter.WriteStartElement("basename");
+                    xmlWriter.WriteString(val.ValueName);
+                    xmlWriter.WriteEndElement();
+
+                    // Write name_type element
+                    xmlWriter.WriteStartElement("name_type");
+                    xmlWriter.WriteString("v");
+                    xmlWriter.WriteEndElement();
+
+                    // Write alloc element
+                    xmlWriter.WriteStartElement("alloc");
+                    if (val.VKRecord.IsFree) {
+                        xmlWriter.WriteString("0");
                         valueCountDeleted += 1;
                     }
-                    else
-                    {
-                        sw.WriteLine("  <alloc>1</alloc>");
+                    else {
+                        xmlWriter.WriteString("1");
                         valueCount += 1;
                     }
-                    sw.WriteLine("  <data_type>{0}</data_type>", val.VKRecord.DataType);
-                    sw.WriteLine("  <data>{0}</data>", BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
-                    sw.WriteLine("  <byte_runs>");
+                    xmlWriter.WriteEndElement();
 
+                    // Write data_type element
+                    xmlWriter.WriteStartElement("data_type");
+                    xmlWriter.WriteString(val.VKRecord.DataType.ToString());
+                    xmlWriter.WriteEndElement();
+
+                    // Write byte_runs (file location) element
+                    xmlWriter.WriteStartElement("byte_runs");
                     if (val.VKRecord.DataType != VKCellRecord.DataTypeEnum.RegNone)
                     {
-                        // Two byte_run elements are written because:
-                        // 1st: Points to the absolute offset of the VK record
-                        // 2nd: Points to the actual offset where the data is
-                        sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.VKRecord.AbsoluteOffset, ((val.VKRecord.Size) * (-1) - val.VKRecord.Padding.Length));
-                        sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.VKRecord.OffsetToData + 4096), val.VKRecord.ValueDataRaw.Length);
+                        xmlWriter.WriteStartElement("byte_run");
+                        xmlWriter.WriteAttributeString("file_offset", val.VKRecord.AbsoluteOffset.ToString());
+                        xmlWriter.WriteAttributeString("len", (val.VKRecord.Size * (-1) - val.VKRecord.Padding.Length).ToString());
+                        xmlWriter.WriteEndElement();
+                        xmlWriter.WriteStartElement("byte_run");
+                        xmlWriter.WriteAttributeString("file_offset", (val.VKRecord.OffsetToData + 4096).ToString());
+                        xmlWriter.WriteAttributeString("len", val.VKRecord.ValueDataRaw.Length.ToString());
+                        xmlWriter.WriteEndElement();
                     }
-                    sw.WriteLine("  </byte_runs>");
-                    sw.WriteLine("</cellobject>");
+                    xmlWriter.WriteEndElement(); // End byte_runs element
 
-                    // TESTING CODE>
-                    //sw.WriteLine("DAT LEN1: {0}", val.VKRecord.ValueDataRaw.Length);
-                    //sw.WriteLine("SIZE: {0}", val.VKRecord.Size);
-                    //sw.WriteLine("NAME LEN: {0}", val.VKRecord.NameLength);
-                    //sw.WriteLine("DATA LEN: {0}", val.VKRecord.DataLength);
-                    //sw.WriteLine("OFF 2 DATA: {0}", val.VKRecord.OffsetToData);
-                    //sw.WriteLine("PADDING: {0}", val.VKRecord.Padding.Length);
-                    //sw.WriteLine("SLACK LEN: {0}", val.VKRecord.ValueDataSlack.Length);
+                    xmlWriter.WriteEndElement(); // End cellobject element
                 }
 
                 // Finished with this key, process the next subkey
-                DumpKeyXMLFormat(subkey, sw, ref keyCount, ref valueCount, ref keyCountDeleted, ref valueCountDeleted);
+                DumpKeyXMLFormat(subkey, xmlWriter, ref keyCount, ref valueCount, ref keyCountDeleted, ref valueCountDeleted);
             }
         }
 
@@ -595,85 +613,142 @@ namespace Registry
         /// </summary>
         /// <remarks>Be sure to set FlushRecordListsAfterParse to FALSE if you want deleted records included</remarks>
         /// <param name="outfile">The outfile.</param>
-        /// <param name="deletedOnly">if set to <c>true</c> [deleted only].</param>
-        public void ExportDataToXMLFormat(string outfile, bool deletedOnly)
+        public void ExportDataToXMLFormat(string outfile)
         {
             var KeyCount = 0;
             var ValueCount = 0;
             var KeyCountDeleted = 0;
             var ValueCountDeleted = 0;
 
-            Console.WriteLine("  > Starting XML generation...");
+            // Create setting for XML output
+            XmlWriterSettings settings = new XmlWriterSettings();
+            settings.Indent = true;
+            settings.NewLineChars = "\r\n";
 
-            var header = new StringBuilder();
-            using (var sw = new StreamWriter(outfile, false))
+            XmlWriter xmlWriter;
+            if (outfile == "console")
             {
-                sw.AutoFlush = true;
+                xmlWriter = XmlWriter.Create(Console.Out, settings);
+            }
+            else
+            {
+                xmlWriter = XmlWriter.Create(outfile, settings);
+            }
 
-                sw.Write(header.ToString());
+            using (xmlWriter)
+            {
+                xmlWriter.WriteStartDocument();
+                xmlWriter.WriteStartElement("hive");
 
-                sw.WriteLine("<hive>");
-
-                if (deletedOnly == false)
+                // Write XML for Registry ROOT key
+                if (Root.LastWriteTime != null)
                 {
-                    // Write XML for Registry ROOT key
-                    if (Root.LastWriteTime != null)
-                    {
-                        KeyCount = 1;
-                        sw.WriteLine("<cellobject root='1'>");
-                        sw.WriteLine("  <cellpath>{0}</cellpath>", Root.KeyPath);
-                        sw.WriteLine("  <name_type>k</name_type>");
-                        sw.WriteLine("  <mtime>{0}</mtime>", Root.LastWriteTime.Value.UtcDateTime.ToString("o"));
-                        sw.WriteLine("  <alloc>1</alloc>");
-                        sw.WriteLine("  <byte_runs>");
-                        sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", Root.NKRecord.AbsoluteOffset, (Root.NKRecord.Size - Root.NKRecord.Padding.Length));
-                        sw.WriteLine("  </byte_runs>");
-                        sw.WriteLine("</cellobject>");
-                    }
+                    KeyCount = 1;
 
-                    // Write XML for Registry ROOT values (it is unusal to have values here)
-                    foreach (var val in Root.Values)
-                    {
-                        ValueCount += 1;
-                        sw.WriteLine("<cellobject>");
-                        sw.WriteLine("  <cellpath>{0}\\{1}</cellpath>", Root.KeyPath, val.ValueName);
-                        sw.WriteLine("  <basename>{0}</basename>", val.ValueName);
-                        sw.WriteLine("  <name_type>v</name_type>");
-                        if (val.VKRecord.IsFree)
-                        {
-                            sw.WriteLine("  <alloc>0</alloc>");
-                            ValueCountDeleted += 1;
-                        }
-                        else
-                        {
-                            sw.WriteLine("  <alloc>1</alloc>");
-                            ValueCount += 1;
-                        }
-                        sw.WriteLine("  <data_type>{0}</data_type>", val.VKRecord.DataType);
-                        sw.WriteLine("  <data>{0}</data>", BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
-                        sw.WriteLine("  <byte_runs>");
+                    // Start cellobject element
+                    xmlWriter.WriteStartElement("cellobject");
+                    xmlWriter.WriteAttributeString("root", "1");
 
-                        if (val.VKRecord.DataType != VKCellRecord.DataTypeEnum.RegNone)
-                        {
-                            // Two byte_run elements are written because:
-                            // 1st: Points to the absolute offset of the VK record
-                            // 2nd: Points to the actual offset where the data is
-                            sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", val.VKRecord.AbsoluteOffset, ((val.VKRecord.Size) * (-1) - val.VKRecord.Padding.Length));
-                            sw.WriteLine("    <byte_run file_offset=\"{0}\" len=\"{1}\"/>", (val.VKRecord.OffsetToData + 4096), val.VKRecord.ValueDataRaw.Length);
-                        }
-                        sw.WriteLine("  </byte_runs>");
-                        sw.WriteLine("</cellobject>");
-                    }
-                    // Now start recursively dumping subkeys from the ROOT key
-                    DumpKeyXMLFormat(Root, sw, ref KeyCount, ref ValueCount, ref KeyCountDeleted, ref ValueCountDeleted);
+                    // Write cellpath element
+                    xmlWriter.WriteStartElement("cellpath");
+                    xmlWriter.WriteString(Root.KeyPath);
+                    xmlWriter.WriteEndElement();
+
+                    // Write basename element
+                    xmlWriter.WriteStartElement("basename");
+                    xmlWriter.WriteString(Root.KeyPath);
+                    xmlWriter.WriteEndElement();
+
+                    // Write name_type element
+                    xmlWriter.WriteStartElement("name_type");
+                    xmlWriter.WriteString("k");
+                    xmlWriter.WriteEndElement();
+
+                    // Write alloc element
+                    xmlWriter.WriteStartElement("alloc");
+                    xmlWriter.WriteString("1");
+                    xmlWriter.WriteEndElement();
+
+                    // Write LastWriteTime (modified time) element
+                    xmlWriter.WriteStartElement("mtime");
+                    xmlWriter.WriteString(Root.LastWriteTime.Value.UtcDateTime.ToString("o"));
+                    xmlWriter.WriteEndElement();
+
+                    // Write byte_runs (file location) element
+                    xmlWriter.WriteStartElement("byte_runs");
+                    xmlWriter.WriteStartElement("byte_run");
+                    xmlWriter.WriteAttributeString("file_offset", Root.NKRecord.AbsoluteOffset.ToString());
+                    xmlWriter.WriteAttributeString("len", (Root.NKRecord.Size - Root.NKRecord.Padding.Length).ToString());
+                    xmlWriter.WriteEndElement();
+                    xmlWriter.WriteEndElement(); // End byte_runs element
+                    xmlWriter.WriteEndElement(); // End cellobject element
                 }
+
+                // Write XML for Registry ROOT values (it is unusal to have values here)
+                foreach (var val in Root.Values)
+                {
+                    ValueCount += 1;
+
+                    // Start cellobject element
+                    xmlWriter.WriteStartElement("cellobject");
+
+                    // Write cellpath element
+                    xmlWriter.WriteStartElement("cellpath");
+                    xmlWriter.WriteString(string.Concat(Root.KeyPath, "\\", val.ValueName));
+                    xmlWriter.WriteEndElement();
+
+                    // Write basename element
+                    xmlWriter.WriteStartElement("basename");
+                    xmlWriter.WriteString(val.ValueName);
+                    xmlWriter.WriteEndElement();
+
+                    // Write name_type element
+                    xmlWriter.WriteStartElement("name_type");
+                    xmlWriter.WriteString("v");
+                    xmlWriter.WriteEndElement();
+
+                    // Write alloc element
+                    xmlWriter.WriteStartElement("alloc");
+                    if (val.VKRecord.IsFree) { xmlWriter.WriteString("0"); }
+                    else { xmlWriter.WriteString("1"); }
+                    xmlWriter.WriteEndElement();
+
+                    // Write data_type element
+                    xmlWriter.WriteStartElement("data_type");
+                    xmlWriter.WriteString(val.VKRecord.DataType.ToString());
+                    xmlWriter.WriteEndElement();
+
+                    // Write data element
+                    xmlWriter.WriteStartElement("data");
+                    xmlWriter.WriteString(BitConverter.ToString(val.VKRecord.ValueDataRaw).Replace("-", " "));
+                    xmlWriter.WriteEndElement();
+
+                    // Write byte_runs (file location) element
+                    xmlWriter.WriteStartElement("byte_runs");
+                    if (val.VKRecord.DataType != VKCellRecord.DataTypeEnum.RegNone)
+                    {
+                        xmlWriter.WriteStartElement("byte_run");
+                        xmlWriter.WriteAttributeString("file_offset", val.VKRecord.AbsoluteOffset.ToString());
+                        xmlWriter.WriteAttributeString("len", (val.VKRecord.Size * (-1) - val.VKRecord.Padding.Length).ToString());
+                        xmlWriter.WriteEndElement();
+                        xmlWriter.WriteStartElement("byte_run");
+                        xmlWriter.WriteAttributeString("file_offset", (val.VKRecord.OffsetToData + 4096).ToString());
+                        xmlWriter.WriteAttributeString("len", val.VKRecord.ValueDataRaw.Length.ToString());
+                        xmlWriter.WriteEndElement();
+                    }
+                    xmlWriter.WriteEndElement(); // End byte_runs element
+
+                    xmlWriter.WriteEndElement(); // End cellobject element
+                }
+
+                // Now start recursively dumping subkeys from the ROOT key
+                DumpKeyXMLFormat(Root, xmlWriter, ref KeyCount, ref ValueCount, ref KeyCountDeleted, ref ValueCountDeleted);
 
                 var theRest = CellRecords.Where(a => a.Value.IsReferenced == false);
                 //may not need to if we do not care about orphaned values
 
                 foreach (var keyValuePair in theRest)
                 {
-                    //Console.WriteLine("{0}\n\n", keyValuePair.);
                     try
                     {
                         if (keyValuePair.Value.Signature == "vk")
@@ -681,35 +756,64 @@ namespace Registry
                             ValueCountDeleted += 1;
                             var val = keyValuePair.Value as VKCellRecord;
 
+                            // Convert Registry value data to string
                             string data = BitConverter.ToString(val.ValueDataRaw).Replace("-", " ");
 
                             // Check the cell path (key + value name) for:
-                            // 1) Special characters
-                            // 2) Unicode control characters
+                            // 1) Special characters, 2) Unicode control characters
                             string KeyCellpath = SpecialXMLCharacterCheck(val.ValueName);
                             KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
-                            
-                            // Write CellObject
-                            sw.WriteLine(@"<cellobject>
-  <cellpath></cellpath>
-  <basename>{0}</basename>
-  <name_type>v</name_type>
-  <alloc>{1}</alloc>
-  <data_type>{2}</data_type>
-  <data>{3}</data>
-  <byte_runs>
-    <byte_run file_offset=""{4}"" len=""{5}""/>
-    <byte_run file_offset=""{6}"" len=""{7}""/>
-  </byte_runs>
-</cellobject>",
-                                KeyCellpath,
-                                Convert.ToInt32(val.IsFree),
-                                val.DataType,
-                                data,
-                                val.AbsoluteOffset,
-                                ((val.Size) * (-1) - val.Padding.Length),
-                                (val.OffsetToData + 4096), 
-                                val.DataLength);
+
+                            // Start cellobject element
+                            xmlWriter.WriteStartElement("cellobject");
+
+                            // Write cellpath element
+                            xmlWriter.WriteStartElement("cellpath");
+                            xmlWriter.WriteString("");
+                            xmlWriter.WriteEndElement();
+
+                            // Write basename element
+                            xmlWriter.WriteStartElement("basename");
+                            xmlWriter.WriteString(val.ValueName);
+                            xmlWriter.WriteEndElement();
+
+                            // Write name_type element
+                            xmlWriter.WriteStartElement("name_type");
+                            xmlWriter.WriteString("v");
+                            xmlWriter.WriteEndElement();
+
+                            // Write alloc element
+                            xmlWriter.WriteStartElement("alloc");
+                            if (val.IsFree) { xmlWriter.WriteString("0"); }
+                            else { xmlWriter.WriteString("1"); }
+                            xmlWriter.WriteEndElement();
+
+                            // Write data_type element
+                            xmlWriter.WriteStartElement("data_type");
+                            xmlWriter.WriteString(val.DataType.ToString());
+                            xmlWriter.WriteEndElement();
+
+                            // Write data element
+                            xmlWriter.WriteStartElement("data");
+                            xmlWriter.WriteString(data);
+                            xmlWriter.WriteEndElement();
+
+                            // Write byte_runs (file location) element
+                            xmlWriter.WriteStartElement("byte_runs");
+                            if (val.DataType != VKCellRecord.DataTypeEnum.RegNone)
+                            {
+                                xmlWriter.WriteStartElement("byte_run");
+                                xmlWriter.WriteAttributeString("file_offset", val.AbsoluteOffset.ToString());
+                                xmlWriter.WriteAttributeString("len", (val.Size * (-1) - val.Padding.Length).ToString());
+                                xmlWriter.WriteEndElement();
+                                xmlWriter.WriteStartElement("byte_run");
+                                xmlWriter.WriteAttributeString("file_offset", (val.OffsetToData + 4096).ToString());
+                                xmlWriter.WriteAttributeString("len", val.ValueDataRaw.Length.ToString());
+                                xmlWriter.WriteEndElement();
+                            }
+                            xmlWriter.WriteEndElement(); // End byte_runs element
+
+                            xmlWriter.WriteEndElement(); // End cellobject element
                         }
 
                         if (keyValuePair.Value.Signature == "nk")
@@ -720,23 +824,45 @@ namespace Registry
                             var nk = keyValuePair.Value as NKCellRecord;
                             var key = new RegistryKey(nk, null);
 
-                            string KeyCellpath = SpecialXMLCharacterCheck(key.KeyPath);
-                            KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
-                            sw.WriteLine(@"<cellobject>
-  <cellpath>{0}</cellpath>
-  <name_type>k</name_type>
-  <mtime>{1}</mtime>
-  <alloc>0</alloc>
-  <byte_runs>
-    <byte_run file_offset=""{2}"" len=""{3}""/>
-  </byte_runs>
-</cellobject>",
-                                KeyCellpath,
-                                key.LastWriteTime.Value.UtcDateTime.ToString("o"),
-                                key.NKRecord.AbsoluteOffset,
-                                (key.NKRecord.Size - key.NKRecord.Padding.Length));
+                            // Start cellobject element
+                            xmlWriter.WriteStartElement("cellobject");
 
-                        DumpKeyXMLFormat(key, sw, ref KeyCount, ref ValueCount, ref KeyCountDeleted, ref ValueCountDeleted);
+                            // Write cellpath element
+                            xmlWriter.WriteStartElement("cellpath");
+                            xmlWriter.WriteString(key.KeyPath);
+                            xmlWriter.WriteEndElement();
+
+                            // Write basename element
+                            xmlWriter.WriteStartElement("basename");
+                            xmlWriter.WriteString(key.KeyName);
+                            xmlWriter.WriteEndElement();
+
+                            // Write name_type element
+                            xmlWriter.WriteStartElement("name_type");
+                            xmlWriter.WriteString("k");
+                            xmlWriter.WriteEndElement();
+
+                            // Write alloc element
+                            xmlWriter.WriteStartElement("alloc");
+                            xmlWriter.WriteString("0");
+                            xmlWriter.WriteEndElement();
+
+                            // Write LastWriteTime (modified time) element
+                            xmlWriter.WriteStartElement("mtime");
+                            xmlWriter.WriteString(key.LastWriteTime.Value.UtcDateTime.ToString("o"));
+                            xmlWriter.WriteEndElement();
+
+                            // Write byte_runs (file location) element
+                            xmlWriter.WriteStartElement("byte_runs");
+                            xmlWriter.WriteStartElement("byte_run");
+                            xmlWriter.WriteAttributeString("file_offset", key.NKRecord.AbsoluteOffset.ToString());
+                            xmlWriter.WriteAttributeString("len", (key.NKRecord.Size - Root.NKRecord.Padding.Length).ToString());
+                            xmlWriter.WriteEndElement();
+                            xmlWriter.WriteEndElement(); // End byte_runs element
+
+                            xmlWriter.WriteEndElement(); // End cellobject element
+
+                            DumpKeyXMLFormat(key, xmlWriter, ref KeyCount, ref ValueCount, ref KeyCountDeleted, ref ValueCountDeleted);
                         }
                     }
                     catch (Exception ex)
@@ -745,12 +871,21 @@ namespace Registry
                             keyValuePair.Value.AbsoluteOffset, ex.Message);
                     }
                 }
-                sw.WriteLine("</hive>");
+
+                xmlWriter.WriteEndElement(); // End hive
+                xmlWriter.WriteEndDocument();
+                xmlWriter.Close();
+                //System.Environment.Exit(1);
+
                 _logger.Info(">>> total_keys: {0}", KeyCount);
                 _logger.Info(">>> total_values: {0}", ValueCount);
                 _logger.Info(">>> total_deleted_keys: {0}", KeyCountDeleted);
                 _logger.Info(">>> total_deleted_values: {0}", ValueCountDeleted);
             }
+            //xmlWriter.WriteEndDocument();
+            //xmlWriter.Close();
+
+
         }
 
         public RegistryKey GetDeletedKey(string keyPath, string lastwritetimestamp)

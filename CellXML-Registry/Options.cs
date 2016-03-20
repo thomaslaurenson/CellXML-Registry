@@ -15,6 +15,10 @@ internal class Options
     HelpText = "Recover and process deleted Registry keys/values")]
     public bool RecoverDeleted { get; set; }
 
+    [Option('o', DefaultValue = false, Required = false,
+    HelpText = "Save RegXML to file (default is stdout). If -o specified an XML file is saved to the same location as the input hive file.")]
+    public bool OutputFile { get; set; }
+
     [Option('v', DefaultValue = 0, Required = false,
         HelpText = "Log file verbosity level. 0 = Info, 1 = Debug, 2 = Trace")]
     public int VerboseLevel { get; set; }
@@ -38,11 +42,11 @@ internal class Options
         usage.AppendLine("    CellXML-Registry leverages the Registry parser project by Eric");
         usage.AppendLine("    Zimmerman to aid in parsing the Registry structure.");
         usage.AppendLine("  >>> Usage Examples:");
-        usage.AppendLine("    CellXML-Registry-1.0.0.exe -f NTUSER.DAT");
-        usage.AppendLine("    CellXML-Registry-1.0.0.exe -r -f NTUSER.DAT");
-        usage.AppendLine("    CellXML-Registry-1.0.0.exe -v 2 -f SOFTWARE");
-        usage.AppendLine("    CellXML-Registry-1.0.0.exe -d C:\\Test-Hives\\");
-        usage.AppendLine("    CellXML-Registry-1.0.0.exe -r -d C:\\Test-Hives\\");
+        usage.AppendLine("    CellXML-Registry.exe -f NTUSER.DAT");
+        usage.AppendLine("    CellXML-Registry.exe -r -f NTUSER.DAT");
+        usage.AppendLine("    CellXML-Registry.exe -v 2 -f SOFTWARE");
+        usage.AppendLine("    CellXML-Registry.exe -d C:\\Test-Hives\\");
+        usage.AppendLine("    CellXML-Registry.exe -r -d C:\\Test-Hives\\");
         usage.AppendLine("  >>> Acknowledgements:");
         usage.AppendLine("    Eric Zimmerman Registry project (https://github.com/EricZimmerman/Registry)");
         usage.AppendLine("    Alex Nelson RegXML project (http://www.ssrc.ucsc.edu/person/ajnelson.html)");

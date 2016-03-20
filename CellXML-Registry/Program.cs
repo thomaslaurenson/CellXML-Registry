@@ -156,7 +156,7 @@ namespace CellXMLRegistry
                     continue;
                 }
 
-                Console.WriteLine(">>> Processing: '{0}'", testFile);
+                //Console.WriteLine(">>> Processing: '{0}'", testFile);
                 logger.Info("Processing '{0}'", testFile);
 
                 var sw = new Stopwatch();
@@ -181,7 +181,7 @@ namespace CellXMLRegistry
                     registryHive.FlushRecordListsAfterParse = false;
                     registryHive.ParseHive();
                     logger.Info("Finished processing '{0}'", testFile);
-                    Console.WriteLine("  > Finished processing...");
+                    //Console.WriteLine("  > Finished processing...");
 
                     var freeCells = registryHive.CellRecords.Where(t => t.Value.IsFree);
                     var referencedCells = registryHive.CellRecords.Where(t => t.Value.IsReferenced);
@@ -248,20 +248,22 @@ namespace CellXMLRegistry
 
                     logger.Info(sb.ToString());
 
-                    var deletedOnly = false;
-                    //var deletedOnly = result.Value.RecoverDeleted;
-
-                    var baseDir = Path.GetDirectoryName(testFile);
-                    var baseFname = Path.GetFileName(testFile);
-                    var myName = string.Empty;
-                    myName = ".xml";
-
-                    var outfile = Path.Combine(baseDir, $"{baseFname}{myName}");
+                    string outfile;
+                    if (result.Value.OutputFile)
+                    {
+                        var baseDir = Path.GetDirectoryName(testFile);
+                        var baseFname = Path.GetFileName(testFile);
+                        var myName = string.Empty;
+                        myName = ".xml";
+                        outfile = Path.Combine(baseDir, $"{baseFname}{myName}");
+                    }
+                    else
+                    {
+                        outfile = "console";
+                    }
 
                     logger.Info("Exporting hive data to '{0}'", outfile);
-
-                    //registryHive.ExportDataToCommonFormat(outfile, deletedOnly);
-                    registryHive.ExportDataToXMLFormat(outfile, deletedOnly);
+                    registryHive.ExportDataToXMLFormat(outfile);
                 }
                 catch (Exception ex)
                 {
@@ -269,7 +271,7 @@ namespace CellXMLRegistry
                 }
                 sw.Stop();
                 logger.Info(">>> Processing time: {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
-                Console.WriteLine(">>> Processing time: {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
+                //Console.WriteLine(">>> Processing time: {0:N4} seconds\r\n", sw.Elapsed.TotalSeconds);
             }
         }
 	}
