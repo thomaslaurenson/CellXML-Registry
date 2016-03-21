@@ -159,6 +159,20 @@ namespace CellXMLRegistry
                 //Console.WriteLine(">>> Processing: '{0}'", testFile);
                 logger.Info("Processing '{0}'", testFile);
 
+                if (result.Value.PerformCheck)
+                {
+                    try
+                    {
+                        var tregistryHive = new RegistryHive(testFile);
+                        System.Environment.Exit(0);
+                    }
+                    catch (Exception)
+                    {
+                        System.Environment.Exit(1);
+                    }
+
+                }
+
                 var sw = new Stopwatch();
                 try
                 {

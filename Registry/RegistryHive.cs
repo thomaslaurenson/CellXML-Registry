@@ -456,50 +456,65 @@ namespace Registry
             }
         }
 
-        private string ControlXMLCharacterCheck(string XMLstring)
+        private string RemoveInvalidXmlChars(string XMLstring)
         {
+            // Never called, left for historical purposes
+            if (XMLstring.ToLowerInvariant().IndexOf('&') != -1) {
+                XMLstring = XMLstring.Replace("&", "&amp;");
+            }
+            if (XMLstring.ToLowerInvariant().IndexOf('<') != -1) {
+                XMLstring = XMLstring.Replace("<", "&lt;");
+            }
+            if (XMLstring.ToLowerInvariant().IndexOf('>') != -1) {
+                XMLstring = XMLstring.Replace(">", "&gt;");
+            }
+            if (XMLstring.ToLowerInvariant().IndexOf('"') != -1) {
+                XMLstring = XMLstring.Replace("\"", "&quot;");
+            }
+            if (XMLstring.ToLowerInvariant().IndexOf('\'') != -1) {
+                XMLstring = XMLstring.Replace("'", "&apos;");
+            }
+
             char[] arrForm = XMLstring.ToCharArray();
-            StringBuilder buffer = new StringBuilder(XMLstring.Length);//This many chars at most
+            StringBuilder buffer = new StringBuilder(XMLstring.Length);
 
             foreach (char ch in arrForm)
-                if (!Char.IsControl(ch)) buffer.Append(ch);//Only add to buffer if not a control char
+                if (!Char.IsControl(ch)) buffer.Append(ch); // Only add to buffer if not a control char
 
             return buffer.ToString();
         }
 
         private string SpecialXMLCharacterCheck(string XMLstring)
         {
-            if (XMLstring.ToLowerInvariant().IndexOf('&') != -1) 
-            {
-                //_logger.Info("OLD: {0}", XMLstring);
+            if (XMLstring.ToLowerInvariant().IndexOf('&') != -1)  {
                 XMLstring = XMLstring.Replace("&", "&amp;");
-                //_logger.Info("NEW: {0}", XMLstring);
             }
-            if (XMLstring.ToLowerInvariant().IndexOf('<') != -1)
-            {
-                //_logger.Info("OLD: {0}", XMLstring);
+            if (XMLstring.ToLowerInvariant().IndexOf('<') != -1) {
                 XMLstring = XMLstring.Replace("<", "&lt;");
-                //_logger.Info("NEW: {0}", XMLstring);
             }
-            if (XMLstring.ToLowerInvariant().IndexOf('>') != -1)
-            {
-                //_logger.Info("OLD: {0}", XMLstring);
+            if (XMLstring.ToLowerInvariant().IndexOf('>') != -1) {
                 XMLstring = XMLstring.Replace(">", "&gt;");
-                //_logger.Info("NEW: {0}", XMLstring);
             }
-            if (XMLstring.ToLowerInvariant().IndexOf('"') != -1)
-            {
-                //_logger.Info("OLD: {0}", XMLstring);
+            if (XMLstring.ToLowerInvariant().IndexOf('"') != -1) {
                 XMLstring = XMLstring.Replace("\"", "&quot;");
-                //_logger.Info("NEW: {0}", XMLstring);
             }
-            if (XMLstring.ToLowerInvariant().IndexOf('\'') != -1)
-            {
-                //_logger.Info("OLD: {0}", XMLstring);
+            if (XMLstring.ToLowerInvariant().IndexOf('\'') != -1) {
                 XMLstring = XMLstring.Replace("'", "&apos;");
-                //_logger.Info("NEW: {0}", XMLstring);
             }
             return XMLstring;
+        }
+
+        static bool IsValidXmlString(string XMLstring)
+        {
+            try
+            {
+                XmlConvert.VerifyXmlChars(XMLstring);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void DumpKeyXMLFormat(RegistryKey key, XmlWriter xmlWriter, ref int keyCount, ref int valueCount, ref int keyCountDeleted, ref int valueCountDeleted)
@@ -510,15 +525,26 @@ namespace Registry
             {
                 // Start cellobject element
                 xmlWriter.WriteStartElement("cellobject");
+                //xmlWriter.WriteAttributeString("ALLOCKEY", "1"); // Help identifying what type (for debugging)
 
                 // Write cellpath element
                 xmlWriter.WriteStartElement("cellpath");
-                xmlWriter.WriteString(subkey.KeyPath);
+                if (!IsValidXmlString(subkey.KeyPath)) {
+                    xmlWriter.WriteString(XmlConvert.EncodeName(subkey.KeyPath));
+                }
+                else {
+                    xmlWriter.WriteString(subkey.KeyPath);
+                }
                 xmlWriter.WriteEndElement();
 
                 // Write basename element
                 xmlWriter.WriteStartElement("basename");
-                xmlWriter.WriteString(subkey.KeyName);
+                if (!IsValidXmlString(subkey.KeyName)) {
+                    xmlWriter.WriteString(XmlConvert.EncodeName(subkey.KeyName));
+                }
+                else {
+                    xmlWriter.WriteString(subkey.KeyName);
+                }
                 xmlWriter.WriteEndElement();
 
                 // Write name_type element
@@ -552,15 +578,27 @@ namespace Registry
                 {
                     // Start cellobject element
                     xmlWriter.WriteStartElement("cellobject");
+                    //xmlWriter.WriteAttributeString("ALLOCVALUE", "1"); // Help identifying what type (for debugging)
 
                     // Write cellpath element
                     xmlWriter.WriteStartElement("cellpath");
-                    xmlWriter.WriteString(string.Concat(subkey.KeyPath, "\\", val.ValueName));
+                    string cellpath = string.Concat(subkey.KeyPath, "\\", val.ValueName);
+                    if (!IsValidXmlString(cellpath)) {
+                        xmlWriter.WriteString(XmlConvert.EncodeName(cellpath));
+                    }
+                    else {
+                        xmlWriter.WriteString(cellpath);
+                    }
                     xmlWriter.WriteEndElement();
 
                     // Write basename element
                     xmlWriter.WriteStartElement("basename");
-                    xmlWriter.WriteString(val.ValueName);
+                    if (!IsValidXmlString(val.ValueName)) {
+                        xmlWriter.WriteString(XmlConvert.EncodeName(val.ValueName));
+                    }
+                    else {
+                        xmlWriter.WriteString(val.ValueName);
+                    }
                     xmlWriter.WriteEndElement();
 
                     // Write name_type element
@@ -624,6 +662,7 @@ namespace Registry
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.Indent = true;
             settings.NewLineChars = "\r\n";
+            //settings.CheckCharacters = false;
 
             XmlWriter xmlWriter;
             if (outfile == "console")
@@ -691,6 +730,7 @@ namespace Registry
 
                     // Start cellobject element
                     xmlWriter.WriteStartElement("cellobject");
+                    //xmlWriter.WriteAttributeString("ROOTVALUES", "1"); // Help identifying what type (for debugging)
 
                     // Write cellpath element
                     xmlWriter.WriteStartElement("cellpath");
@@ -759,22 +799,24 @@ namespace Registry
                             // Convert Registry value data to string
                             string data = BitConverter.ToString(val.ValueDataRaw).Replace("-", " ");
 
-                            // Check the cell path (key + value name) for:
-                            // 1) Special characters, 2) Unicode control characters
-                            string KeyCellpath = SpecialXMLCharacterCheck(val.ValueName);
-                            KeyCellpath = ControlXMLCharacterCheck(KeyCellpath);
-
                             // Start cellobject element
                             xmlWriter.WriteStartElement("cellobject");
+                            //xmlWriter.WriteAttributeString("DELVAL", "1"); // Help identifying what type (for debugging)
 
-                            // Write cellpath element
+                            // Write cellpath element (not available, write empty string)
                             xmlWriter.WriteStartElement("cellpath");
                             xmlWriter.WriteString("");
                             xmlWriter.WriteEndElement();
 
-                            // Write basename element
                             xmlWriter.WriteStartElement("basename");
-                            xmlWriter.WriteString(val.ValueName);
+                            if (!IsValidXmlString(val.ValueName))
+                            {
+                                xmlWriter.WriteString(XmlConvert.EncodeName(val.ValueName));
+                            }
+                            else
+                            {
+                                xmlWriter.WriteString(SpecialXMLCharacterCheck(XmlConvert.EncodeName(val.ValueName)));
+                            }
                             xmlWriter.WriteEndElement();
 
                             // Write name_type element
@@ -819,6 +861,7 @@ namespace Registry
                         if (keyValuePair.Value.Signature == "nk")
                         {
                             //this should never be once we re-enable deleted key rebuilding
+                            // ^^ from Zimmerman (should be check in future Registry parser updates)
 
                             KeyCountDeleted += 1;
                             var nk = keyValuePair.Value as NKCellRecord;
@@ -826,15 +869,26 @@ namespace Registry
 
                             // Start cellobject element
                             xmlWriter.WriteStartElement("cellobject");
+                            xmlWriter.WriteAttributeString("DELKEY", "1");
 
                             // Write cellpath element
                             xmlWriter.WriteStartElement("cellpath");
-                            xmlWriter.WriteString(key.KeyPath);
+                            if (!IsValidXmlString(key.KeyPath)) {
+                                xmlWriter.WriteString(XmlConvert.EncodeName(key.KeyPath));
+                            }
+                            else {
+                                xmlWriter.WriteString(key.KeyPath);
+                            }
                             xmlWriter.WriteEndElement();
 
                             // Write basename element
                             xmlWriter.WriteStartElement("basename");
-                            xmlWriter.WriteString(key.KeyName);
+                            if (!IsValidXmlString(key.KeyPath)) {
+                                xmlWriter.WriteString(XmlConvert.EncodeName(key.KeyPath));
+                            }
+                            else {
+                                xmlWriter.WriteString(key.KeyPath);
+                            }
                             xmlWriter.WriteEndElement();
 
                             // Write name_type element
@@ -875,17 +929,12 @@ namespace Registry
                 xmlWriter.WriteEndElement(); // End hive
                 xmlWriter.WriteEndDocument();
                 xmlWriter.Close();
-                //System.Environment.Exit(1);
 
                 _logger.Info(">>> total_keys: {0}", KeyCount);
                 _logger.Info(">>> total_values: {0}", ValueCount);
                 _logger.Info(">>> total_deleted_keys: {0}", KeyCountDeleted);
                 _logger.Info(">>> total_deleted_values: {0}", ValueCountDeleted);
             }
-            //xmlWriter.WriteEndDocument();
-            //xmlWriter.Close();
-
-
         }
 
         public RegistryKey GetDeletedKey(string keyPath, string lastwritetimestamp)

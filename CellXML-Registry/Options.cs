@@ -19,6 +19,10 @@ internal class Options
     HelpText = "Save RegXML to file (default is stdout). If -o specified an XML file is saved to the same location as the input hive file.")]
     public bool OutputFile { get; set; }
 
+    [Option('c', DefaultValue = false, Required = false,
+    HelpText = "Check the hive file then exit")]
+    public bool PerformCheck { get; set; }
+
     [Option('v', DefaultValue = 0, Required = false,
         HelpText = "Log file verbosity level. 0 = Info, 1 = Debug, 2 = Trace")]
     public int VerboseLevel { get; set; }
