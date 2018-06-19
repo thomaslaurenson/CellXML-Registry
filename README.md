@@ -60,6 +60,12 @@ The following CellObject represents a Registry value from a SOFTWARE hive file:
 
 This software is authored using Microsoft Visual Studio 2015. The Visual Studio Studio Solution file (CellXML-Registry.sln) is located in the root directory of the project. 
 
+Make sure you clone this repository with included submodules using:
+
+```
+git clone --recursive https://github.com/thomaslaurenson/CellXML-Registry.git
+```
+
 Make sure you install the required dependencies using Nu-Get Package Manager Console:
 
 ```
