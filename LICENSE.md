@@ -4,7 +4,7 @@ also uses the same MIT license as outlined below:
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Thomas Laurenson
+Copyright (c) 2018 Thomas Laurenson
 Copyright (c) 2015 Eric Zimmerman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
