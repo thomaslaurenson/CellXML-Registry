@@ -59,6 +59,13 @@ The following CellObject represents a Registry value from a SOFTWARE hive file:
 ## Compiling Intructions
 
 This software is authored using Microsoft Visual Studio 2015. The Visual Studio Studio Solution file (CellXML-Registry.sln) is located in the root directory of the project. 
+
+Make sure you install the required dependencies using Nu-Get Package Manager Console:
+
+```
+Install-Package NFluent
+Install-Package NLog.Config
+```
   
 ## CellXML-Registry Acknowledgements
 
